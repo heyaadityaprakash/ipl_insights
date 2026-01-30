@@ -137,11 +137,72 @@ async function seedMatches() {
 }
 
 
+async function seedBattingStats() {
+  const dir = path.join(__dirname, '../data/batting_stats/');
+  const files = fs.readdirSync(dir);
+
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
+    const json = JSON.parse(raw);
+
+    const stats = json.response?.stats || [];
+
+    for (const s of stats) {
+      const playerName = s.player?.title;
+      const teamName = s.team?.title;
+      const season = Number(json.response?.season || 2022); // fallback
+
+      if (!playerName || !teamName) continue;
+
+      const player = await prisma.player.findFirst({
+        where: { name: playerName },
+      });
+
+      const team = await prisma.team.findUnique({
+        where: { name: teamName },
+      });
+
+      if (!player || !team) continue;
+
+      await prisma.battingStat.upsert({
+        where: {
+          playerId_season: {
+            playerId: player.id,
+            season,
+          },
+        },
+        update: {},
+        create: {
+          season,
+          matches: s.matches,
+          innings: s.innings,
+          runs: s.runs,
+          balls: s.balls,
+          highest: s.highest,
+          average: parseFloat(s.average),
+          strikeRate: parseFloat(s.strike),
+          fours: s.run4,
+          sixes: s.run6,
+          fifties: s.run50,
+          hundreds: s.run100,
+          notOuts: s.notout,
+          playerId: player.id,
+          teamId: team.id,
+        },
+      });
+    }
+  }
+
+  console.log('Batting stats seeded:', await prisma.battingStat.count());
+}
+
+
 
 async function main() {
   // await seedTeams();
   // await seedPlayers()
-  await seedMatches();
+  // await seedMatches();
+  await seedBattingStats();
 
 }
 
