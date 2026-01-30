@@ -313,7 +313,7 @@ async function main() {
   // await seedMatches();
   // await seedBattingStats();
   // await seedBowlingStats();
-  await seedStandings();
+  // await seedStandings();
 }
 
 main()
