@@ -196,14 +196,124 @@ async function seedBattingStats() {
   console.log('Batting stats seeded:', await prisma.battingStat.count());
 }
 
+async function seedBowlingStats() {
+  const dir = path.join(__dirname, '../data/bowling_stats/');
+  const files = fs.readdirSync(dir);
 
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
+    const json = JSON.parse(raw);
+
+    const stats = json.response?.stats || [];
+    const season = Number(json.response?.season || 2022);
+
+    for (const s of stats) {
+      const playerName = s.player?.title;
+      const teamName = s.team?.title;
+
+      if (!playerName || !teamName) continue;
+
+      const player = await prisma.player.findFirst({
+        where: { name: playerName },
+      });
+
+      const team = await prisma.team.findUnique({
+        where: { name: teamName },
+      });
+
+      if (!player || !team) continue;
+
+      await prisma.bowlingStat.upsert({
+        where: {
+          playerId_season: {
+            playerId: player.id,
+            season,
+          },
+        },
+        update: {},
+        create: {
+          season,
+          matches: s.matches,
+          innings: s.innings,
+          wickets: s.wickets,
+          runs: s.runs,
+          balls: s.balls,
+          overs: parseFloat(s.overs),
+          average: parseFloat(s.average),
+          economy: parseFloat(s.econ),
+          strikeRate: parseFloat(s.strike),
+          bestInning: s.bestinning,
+          bestMatch: s.bestmatch,
+          fourWkts: s.wicket4i,
+          fiveWkts: s.wicket5i,
+          playerId: player.id,
+          teamId: team.id,
+        },
+      });
+    }
+  }
+
+  console.log('Bowling stats seeded:', await prisma.bowlingStat.count());
+}
+
+async function seedStandings() {
+  const dir = path.join(__dirname, '../data/standings/');
+  const files = fs.readdirSync(dir);
+
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
+    const json = JSON.parse(raw);
+
+    const rounds = json.standings || [];
+    const season = 2022; // IPL 2022 (hardcode is fine here)
+
+    for (const round of rounds) {
+      const table = round.standings || [];
+
+      for (const row of table) {
+        const teamName = row.team?.title;
+        if (!teamName) continue;
+
+        const team = await prisma.team.findUnique({
+          where: { name: teamName },
+        });
+
+        if (!team) continue;
+
+        await prisma.standing.upsert({
+          where: {
+            teamId_season: {
+              teamId: team.id,
+              season,
+            },
+          },
+          update: {},
+          create: {
+            season,
+            played: parseInt(row.played),
+            wins: parseInt(row.win),
+            losses: parseInt(row.loss),
+            draws: parseInt(row.draw),
+            noResult: parseInt(row.nr),
+            points: parseInt(row.points),
+            netRunRate: parseFloat(row.netrr),
+            teamId: team.id,
+          },
+        });
+      }
+    }
+  }
+
+  console.log('Standings seeded:', await prisma.standing.count());
+}
 
 async function main() {
   // await seedTeams();
   // await seedPlayers()
   // await seedMatches();
-  await seedBattingStats();
-
+  // await seedBattingStats();
+  // await seedBowlingStats();
+  await seedStandings();
 }
 
 main()

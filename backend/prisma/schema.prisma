@@ -21,6 +21,7 @@ model Team {
   wins      Match[] @relation("WinnerTeam")
   standings Standing[]
   battingStats   BattingStat[]
+  bowlingStats   BowlingStat[]
 }
 
 model Player {
@@ -55,8 +56,6 @@ model Match {
   team1        Team     @relation("Team1", fields: [team1Id], references: [id])
   team2        Team     @relation("Team2", fields: [team2Id], references: [id])
   winnerTeam   Team?    @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
-
-  bowlingStats BowlingStat[]
 }
 
 
@@ -90,28 +89,50 @@ model BattingStat {
 
 
 model BowlingStat {
-  id        Int @id @default(autoincrement())
-  matchId  Int
-  playerId Int
+  id          Int     @id @default(autoincrement())
 
-  overs    Float
-  runs     Int
-  wickets  Int
-  economy  Float
+  season      Int
+  matches     Int
+  innings     Int
+  wickets     Int
+  runs        Int
+  balls       Int?
+  overs       Float?
+  average     Float?
+  economy     Float?
+  strikeRate  Float?
+  bestInning  String?
+  bestMatch   String?
+  fourWkts    Int?
+  fiveWkts    Int?
 
-  match    Match  @relation(fields: [matchId], references: [id])
-  player   Player @relation(fields: [playerId], references: [id])
+
+
+  playerId    Int
+  teamId      Int
+
+  player      Player @relation(fields: [playerId], references: [id])
+  team        Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([playerId, season])
 }
+
 
 model Standing {
-  id            Int @id @default(autoincrement())
-  season        Int
-  teamId        Int
+  id         Int     @id @default(autoincrement())
 
-  matchesPlayed Int
-  wins          Int
-  losses        Int
-  points        Int
+  season     Int
+  played     Int
+  wins       Int
+  losses     Int
+  draws      Int?
+  noResult   Int?
+  points     Int
+  netRunRate Float?
 
-  team          Team @relation(fields: [teamId], references: [id])
+  teamId     Int
+  team       Team    @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, season])
 }
+
