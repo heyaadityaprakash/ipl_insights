@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+
+model Team {
+  id        Int      @id @default(autoincrement()) 
+  name      String   @unique   
+  shortName String?
+  imgUrl    String?
+
+  players   Player[]
+  team1Matches Match[] @relation("Team1")
+  team2Matches Match[] @relation("Team2")
+  wins      Match[] @relation("WinnerTeam")
+  standings Standing[]
+}
+
+model Player {
+  id            Int     @id @default(autoincrement())
+  name          String
+  role          String?
+  battingStyle  String?
+  bowlingStyle  String?
+  nationality   String?
+  teamId        Int
+
+  team          Team    @relation(fields: [teamId], references: [id])
+  batting       BattingStat[]
+  bowling       BowlingStat[]
+
+  @@unique([name, teamId])
+}
+
+
+
+model Match {
+  id            Int      @id @default(autoincrement())
+  season        Int
+  matchDate     DateTime
+  venue         String
+
+  team1Id       Int
+  team2Id       Int
+  winnerTeamId  Int?
+
+  team1         Team @relation("Team1", fields: [team1Id], references: [id])
+  team2         Team @relation("Team2", fields: [team2Id], references: [id])
+  winnerTeam    Team? @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
+
+  battingStats  BattingStat[]
+  bowlingStats  BowlingStat[]
+}
+
+model BattingStat {
+  id        Int @id @default(autoincrement())
+  matchId  Int
+  playerId Int
+
+  runs     Int
+  balls    Int
+  fours    Int
+  sixes    Int
+  strikeRate Float
+
+  match    Match  @relation(fields: [matchId], references: [id])
+  player   Player @relation(fields: [playerId], references: [id])
+}
+
+model BowlingStat {
+  id        Int @id @default(autoincrement())
+  matchId  Int
+  playerId Int
+
+  overs    Float
+  runs     Int
+  wickets  Int
+  economy  Float
+
+  match    Match  @relation(fields: [matchId], references: [id])
+  player   Player @relation(fields: [playerId], references: [id])
+}
+
+model Standing {
+  id            Int @id @default(autoincrement())
+  season        Int
+  teamId        Int
+
+  matchesPlayed Int
+  wins          Int
+  losses        Int
+  points        Int
+
+  team          Team @relation(fields: [teamId], references: [id])
+}
