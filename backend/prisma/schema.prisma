@@ -41,22 +41,25 @@ model Player {
 
 
 model Match {
-  id            Int      @id @default(autoincrement())
-  season        Int
-  matchDate     DateTime
-  venue         String
+  id           Int      @id @default(autoincrement())
+  externalId   Int?     @unique
+  season       Int
+  matchDate    DateTime
+  venue        String
 
-  team1Id       Int
-  team2Id       Int
-  winnerTeamId  Int?
+  team1Id      Int
+  team2Id      Int
+  winnerTeamId Int?
 
-  team1         Team @relation("Team1", fields: [team1Id], references: [id])
-  team2         Team @relation("Team2", fields: [team2Id], references: [id])
-  winnerTeam    Team? @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
+  team1        Team     @relation("Team1", fields: [team1Id], references: [id])
+  team2        Team     @relation("Team2", fields: [team2Id], references: [id])
+  winnerTeam   Team?    @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
 
-  battingStats  BattingStat[]
-  bowlingStats  BowlingStat[]
+  battingStats BattingStat[]
+  bowlingStats BowlingStat[]
 }
+
+
 
 model BattingStat {
   id        Int @id @default(autoincrement())

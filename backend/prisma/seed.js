@@ -92,10 +92,57 @@ async function seedPlayers() {
 }
 
 
+async function seedMatches() {
+  const matchesDir = path.join(__dirname, '../data/matches');
+  const files = fs.readdirSync(matchesDir);
+
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(matchesDir, file), 'utf-8');
+    const matchesArray = JSON.parse(raw); 
+
+    for (const m of matchesArray) {
+      const team1Name = m.teama?.name;
+      const team2Name = m.teamb?.name;
+
+      if (!team1Name || !team2Name) continue;
+
+      const team1 = await prisma.team.findUnique({ where: { name: team1Name } });
+      const team2 = await prisma.team.findUnique({ where: { name: team2Name } });
+
+      if (!team1 || !team2) continue;
+
+      let winnerTeamId = null;
+      if (m.winning_team_id) {
+        if (m.winning_team_id === m.teama?.team_id) {
+          winnerTeamId = team1.id;
+        } else if (m.winning_team_id === m.teamb?.team_id) {
+          winnerTeamId = team2.id;
+        }
+      }
+      await prisma.match.create({
+        data: {
+          externalId: m.match_id,
+          season: Number(m.competition?.season),
+          matchDate: new Date(m.date_start_ist),
+          venue: m.venue?.name || 'Unknown',
+          team1Id: team1.id,
+          team2Id: team2.id,
+          winnerTeamId,
+        },
+      });
+    }
+  }
+
+  console.log('Matches seeded:', await prisma.match.count());
+}
+
+
 
 async function main() {
   // await seedTeams();
-  await seedPlayers()
+  // await seedPlayers()
+  await seedMatches();
+
 }
 
 main()
